@@ -1,0 +1,107 @@
+<html>
+  <head>
+    <link href='https://api.mapbox.com/mapbox-gl-js/v0.25.1/mapbox-gl.css' rel='stylesheet' />
+    <style>
+    body { margin:0; padding:0; }
+      #map { position:absolute; top:0; bottom:0; width:100%; }
+      #mapInfo {
+        position: absolute;
+        right: 0;
+        z-index: 1;
+        color: white;
+        background-color: #585656;
+        font-family: monospace;
+        padding: .2rem;
+      }
+      #mapInfo p {
+        margin: .2rem;
+      }
+      #mapInfo .title {
+        text-align: center;
+        text-decoration:underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div id='map'></div>
+    <div id="mapInfo">
+      <p class="title">
+        Mouse
+      </p>
+      <p id="mouseLocationLat"></p>
+      <p id="mouseLocationLng"></p>
+      <p class="title">
+        Map Center
+      </p>
+      <p id="mapCenterLat"></p>
+      <p id="mapCenterLng"></p>
+      <p id="mapZoom"></p>
+    </div>
+    <div id="mouseClickInfo"></div>
+    <script src='https://api.mapbox.com/mapbox-gl-js/v0.25.1/mapbox-gl.js'></script>
+    <script>
+
+      let hovered = {}
+      let selected = {}
+
+      mapboxgl.accessToken = 'pk.eyJ1Ijoic2Vhbmtlbm5ldGhyYXkiLCJhIjoibEdSdDg0dyJ9.sSh7jkFpIIvSvzFEx7kZ1w'
+      let map = new mapboxgl.Map({
+        container: 'map',
+        style: 'mapbox://styles/mapbox/dark-v9',
+        zoom: 9.8,
+        center: [-90.312, 38.628]
+      })
+      map.getCanvas().style.cursor = 'default'
+
+      map.on('mousemove', (e) => handleMouseMove(e) )
+      map.on('click', (e) => handleMouseClick(e) )
+
+      map.on('move', () => setMapInfo() )
+      map.on('zoom', () => setMapInfo() )
+
+      function handleMouseMove(e) {
+        document.getElementById('mouseLocationLat').innerText = `Lat: ${e.lngLat.lat.toFixed(3)}`
+        document.getElementById('mouseLocationLng').innerText = `Lng: ${e.lngLat.lng.toFixed(3)}`
+
+        let features = map.queryRenderedFeatures(e.point)
+
+        for(var id in hovered) {
+          if(!selected[id]) {
+            map.setPaintProperty(id, 'line-color', hovered[id])
+          }
+        }
+        hovered = {}
+
+        if(features) {
+          features.forEach((feature) => {
+            if(map.getPaintProperty(feature.layer.id, 'line-color') && !hovered[feature.layer.id]){
+              hovered[feature.layer.id] = map.getPaintProperty(feature.layer.id, 'line-color')
+              map.setPaintProperty(feature.layer.id, 'line-color', 'hsl(167, 100%, 93%)')
+            }
+          })
+        }
+      }
+
+      function handleMouseClick(e) {
+        let features = map.queryRenderedFeatures(e.point)
+        features.forEach((feature) => {
+          console.log(feature)
+          if(map.getPaintProperty(feature.layer.id, 'line-color') && !selected[feature.layer.id]){
+            console.log('adding')
+            selected[feature.layer.id] = map.getPaintProperty(feature.layer.id, 'line-color')
+            map.setPaintProperty(feature.layer.id, 'line-color', 'white')
+          }
+        })
+      }
+
+      function setMapInfo() {
+        document.getElementById('mapZoom').innerText = `Zoom: ${map.getZoom().toFixed(3)}`
+        document.getElementById('mapCenterLat').innerText = `Lat: ${map.getCenter().lat.toFixed(3)}`
+        document.getElementById('mapCenterLng').innerText = `Lng: ${map.getCenter().lng.toFixed(3)}`
+      }
+
+      setMapInfo()
+
+    </script>
+  </body>
+</html>
